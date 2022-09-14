@@ -189,6 +189,15 @@ def optimalRoute(downhillScores, start, finish):
     return find_path(pred,start,finish)
 
 def find_path(pred, start, finish):
+    """
+    location constructor
+    :input:
+        arg1: pred
+        arg2: start
+        arg3: finish
+    :time complexity: O(|D|)
+    :aux space complexity:
+    """
     path = [finish]
     parent = pred[finish]
     while bool(parent) and parent != start:
@@ -203,6 +212,14 @@ def find_path(pred, start, finish):
         return path
         
 def longest_path(g, topo_order):
+    """
+    
+    :input:
+        arg1: g
+        arg2: topo_order
+    :time complexity: O(|D|+|P|) = O(|D|)
+    :aux space complexity:
+    """
     dist = [-inf for _ in range(len(g))] #list that hold the longest path
     dist[0] = 0
 
@@ -226,11 +243,9 @@ def topo_sort_dfs(g):
     """
     vst = [False for _ in range(len(g))]
     order = []
-    for item in g[0]:
-        u = item[0]
+    for u in range(len(g)):
         if not vst[u]:
             topo_sort_dfs_aux(g, u, vst, order) 
-    order.append(0)
     order.reverse()
     return order
 
@@ -289,7 +304,7 @@ if __name__ == "__main__":
     #print(mygraph.routing(1, 3), '\n') #[1, 5, 6, 3]
     #print(mygraph.routing(1, 4), '\n') #[1, 5, 6, 4]
     #print(mygraph.routing(3, 4), '\n') #[3, 4, 8, 7, 3, 4]
-    #downhillScores = [(0, 6, -500), (1, 4, 100), (1, 2, 300),
-    #                  (6, 3, -100), (6, 1, 200), (3, 4, 400), (3, 1, 400),
-    #                  (5, 6, 700), (5, 1, 1000), (4, 2, 100)]
-    #print(optimalRoute(downhillScores, 6, 2))
+    downhillScores = [(0, 6, -500), (1, 4, 100), (1, 2, 300),
+                      (6, 3, -100), (6, 1, 200), (3, 4, 400), (3, 1, 400),
+                      (5, 6, 700), (5, 1, 1000), (4, 2, 100)]
+    print(optimalRoute(downhillScores, 6, 2))
