@@ -23,8 +23,9 @@ class RoadGraph:
             arg2: cafes, list of tuples (location, waiting_time), where
                  location is the location id of the cafe
                  waiting_time is the waiting time for a coffee in the cafe
-        :output, return or postcondition:
-        :time complexity: O(2|V|+2|E|) = 2O(|V|+|E|) = O(|V|+|E|)
+        :postcondition: graph represented in adjacenct list is constructed 
+        :time complexity: O(2|V|+2|E|) = 2O(|V|+|E|) = O(|V|+|E|),
+                          where |V| is number of vetices, |E is number of edge
         :aux space complexity: adjacency list, O(|V|+|E|)
 
         >>> roads = [(0, 1, 4), (1, 2, 2), (2, 3, 3), (3, 4, 1), (1, 5, 2),
@@ -50,14 +51,17 @@ class RoadGraph:
         self.cafes = cafes
         
 
-    def routing(self, start: int, end: int):
+    def routing(self, start: int, end: int) -> List or None:
         """
         find a shortest path from start to end that passes exactly one cafe
         :input:
             arg1: start, location id of starting point
             arg2: end, location id of destination
-        :time complexity: O(|E|log|V|)
-        :aux space complexity:
+        :time complexity: O(|E|log|V|), dominated by self.shortest_path()
+                          where |V| is number of vetices, |E is number of edge
+        :return: path from start to end that passes exactly on cafe,
+                 which is represented in list
+        :aux space complexity: O(|V|+|E|)
 
         >>> roads = [(0, 1, 4), (1, 2, 2), (2, 3, 3), (3, 4, 1), (1, 5, 2),
         ...         (5, 6, 5), (6, 3, 2), (6, 4, 3), (1, 7, 4), (7, 8, 2),
@@ -75,9 +79,11 @@ class RoadGraph:
         >>> mygraph.routing(3, 4)
         [3, 4, 8, 7, 3, 4]
         """
+        if len(self.graph) == 0 or len(self.cafes) == 0:
+            return None
         
-        start_to_cafe_pred, start_to_cafe_dist= self.shortest_path(start, False)#shortest path to cafe
-        cafe_to_end_pred, cafe_to_end_dist = self.shortest_path(end, True) #shortest from cafe to destination
+        start_to_cafe_pred, start_to_cafe_dist= self.shortest_path(start, False)#shortest path from start to cafe #O(|E|log|V|)
+        cafe_to_end_pred, cafe_to_end_dist = self.shortest_path(end, True) #shortest from cafe to destination #O(|E|log|V|)
     
         
         #find shortest distance
@@ -86,29 +92,31 @@ class RoadGraph:
             cafe_id, wait_time = cafe
             total_dist = start_to_cafe_dist[cafe_id] + cafe_to_end_dist[cafe_id] + wait_time
             if total_dist < min_dist:
-                min_dist = total_dist
-                cafe_chosen = cafe_id
+                min_dist = total_dist #update shortest path
+                cafe_chosen = cafe_id #update cafe to buy coffee
 
         if min_dist == inf: #no cafe or no reachable cafe 
             return None
 
-        path_start_to_cafe = self.find_path(start_to_cafe_pred, start, cafe_chosen)
-        path_cafe_to_end = self.find_path(cafe_to_end_pred, end, cafe_chosen)
+        #get path
+        path_start_to_cafe = self.find_path(start_to_cafe_pred, start, cafe_chosen) #path from start to cafe
+        path_cafe_to_end = self.find_path(cafe_to_end_pred, end, cafe_chosen) #path from end to cafe
 
-        shortest_path = path_start_to_cafe[::-1][0:-1] + path_cafe_to_end
+        shortest_path = path_start_to_cafe[::-1] + path_cafe_to_end[1:] #worst case: all vertices are included in path O(|V|)
         return shortest_path
 
-    def find_path(self, pred: List, start, end):
+    def find_path(self, pred: List, start: int, end: int)-> List or None:
         """
         return path from start to end if there is one, else return None
 
         :input: 
-            arg1: pred, predecessors list that keep track of parent node
+            arg1: pred, predecessors list that keep track of parent of nodes
                   in a shortest path
             arg2: start, location id of starting point
             arg3: end, location id of destination
-        :time complexity: O(|E|)
-        :aux space complexity: O(|V| + |E|), where len(pred) == |V|, len(path) == |E|
+        :return: a list, which is a path from start to end if there is one, else return None
+        :time complexity: O(|V|), worse case path include all vertex
+        :aux space complexity: O(|V|), |V| is number of vertex
         """
         path = [end]
         parent = pred[end]
@@ -116,19 +124,20 @@ class RoadGraph:
             path.append(parent)
             parent = pred[parent]
 
-        if path[-1] != start:
-            return None #can't be reached
+        if path[-1] != start: #can't be reached
+            return None 
         else: 
             return path
         
 
-    def shortest_path(self, start, rev: bool):
+    def shortest_path(self, start, rev: bool) ->Tuple[List]:
         """
-        Dijkstra algorithm that return predecessors list and return list
+        Dijkstra algorithm that return predecessors list and distance list
 
         :input: 
             arg1: start, location id of starting point
-            arg2: rev, search on reversed direction graph if True,
+            arg2: rev, flag to indicate which graph to search
+                  search reversed direction graph if True,
                   else search on original graph
         :time complexity: O(|E|log|V|)
         :aux space complexity:
@@ -146,7 +155,7 @@ class RoadGraph:
         #priority queue
         p_queue = [(inf,i) for i in range(self.num_loc)]
         p_queue = [(0,start)] #start = 0 
-        heapq.heapify(p_queue)
+        heapq.heapify(p_queue) #O(|V|log|V|)
         p_queue_mark = [False for _ in range(self.num_loc)] #mark if a vertex has been searched
 
         while bool(p_queue):
@@ -167,14 +176,14 @@ class RoadGraph:
         return pred, dist
 
 #task 2
-def optimalRoute(downhillScores, start, finish):
+def optimalRoute(downhillScores, start, finish) -> List:
     """
     location constructor
     :input:
         arg1: downhillScores
         arg2: start
         arg3: finish
-    :time complexity: O(|D|) or O(|D|*|P|) 
+    :time complexity: O(|D|) where |D| is number of downhill segment, i.e. len(downhillScores)
     :aux space complexity:
     >>> downhillScores = [(0, 6, -500), (1, 4, 100), (1, 2, 300),
     ...                  (6, 3, -100), (6, 1, 200), (3, 4, 400), (3, 1, 400),
@@ -183,39 +192,42 @@ def optimalRoute(downhillScores, start, finish):
     >>> optimalRoute(downhillScores, start, finish)
     [6, 3, 1, 2]
     """
-    g = graph(downhillScores)
-    topo_order = topo_sort_dfs(g) #topological order list
-    dist, pred = longest_path(g, topo_order) #find optimal route, i.e. longest path
-    return find_path(pred,start,finish)
+    if start == finish:
+        return [start]
 
-def find_path(pred, start, finish):
+    g = graph(downhillScores)
+    topo_order = topo_sort_dfs(g) #O(|D|), topological order list
+    dist, pred = longest_path(g, topo_order) #O(|D|), find optimal route, i.e. longest path
+    return find_path(pred,start,finish) #O(|D|)
+
+def find_path(pred: List, start: int, finish: int)-> List or None:
     """
-    location constructor
+    find shortest path from start to finish
     :input:
-        arg1: pred
+        arg1: pred, predecessor list
         arg2: start
         arg3: finish
     :time complexity: O(|D|)
-    :aux space complexity:
+    :aux space complexity: O(|D|)
     """
     path = [finish]
     parent = pred[finish]
     while bool(parent) and parent != start:
         path.append(parent)
         parent = pred[parent]
-    
-    if not bool(parent):
+
+    if parent != start:
         return None
     else:
         path.append(start)
         path.reverse()
         return path
         
-def longest_path(g, topo_order):
+def longest_path(g: List[List], topo_order: List) -> Tuple[List] or None:
     """
     
     :input:
-        arg1: g
+        arg1: g, a graph represented in adjacency list
         arg2: topo_order
     :time complexity: O(|D|+|P|) = O(|D|)
     :aux space complexity:
@@ -224,22 +236,22 @@ def longest_path(g, topo_order):
     dist[0] = 0
 
     pred = [None for _ in range(len(g))]
-    for u in topo_order:
+    for u in topo_order: #O(|P|)
         for item in g[u]:
             v, w = item
-            if w + dist[u] > dist[v]:
-                dist[v] = w + dist[u]
-                pred[v] = u
+            if w + dist[u] > dist[v]: #if new dist > curr dist
+                dist[v] = w + dist[u] #update dist
+                pred[v] = u #update predecessor
     return dist, pred
 
 
-def topo_sort_dfs(g):
+def topo_sort_dfs(g: List[List])-> List:
     """
-    topological sort
+    topological sort with depth first search
     :input:
-        arg1: g, graph
+        arg1: g, a graph represented adjacency list
     :time complexity: O(|D| + |P|) = O(|D|) 
-    :aux space complexity:
+    :aux space complexity: dominanted by order, O(|P|)
     """
     vst = [False for _ in range(len(g))]
     order = []
@@ -254,11 +266,11 @@ def topo_sort_dfs_aux(g, u, vst, order):
     topological sort aux
     :input:
         arg1: g, graph
-        arg2: u
+        arg2: u, source
         arg3: vst, visited list
         arg4: order, topological order list
     :time complexity: O(|D| + |P|) = O(|D|) 
-    :aux space complexity: dominanted by graph, O(|D|)
+    :aux space complexity: dominanted by order, O(|P|)
     """
     vst[u] = True
     for item in g[u]:
@@ -267,7 +279,7 @@ def topo_sort_dfs_aux(g, u, vst, order):
             topo_sort_dfs_aux(g, v, vst, order)
     order.append(u)
 
-def graph(list):
+def graph(list: List):
     """
     graph constructor
     :input:
@@ -291,8 +303,8 @@ def graph(list):
     return g
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod(verbose=True)
+    #import doctest
+    #doctest.testmod(verbose=True)
     
     #roads = [(1, 2, 2), (2, 3, 3), (3, 4, 1), (1, 5, 2),
     #        (5, 6, 5), (6, 3, 2), (6, 4, 3), (1, 7, 4), (7, 8, 2),
@@ -304,7 +316,8 @@ if __name__ == "__main__":
     #print(mygraph.routing(1, 3), '\n') #[1, 5, 6, 3]
     #print(mygraph.routing(1, 4), '\n') #[1, 5, 6, 4]
     #print(mygraph.routing(3, 4), '\n') #[3, 4, 8, 7, 3, 4]
-    downhillScores = [(0, 6, -500), (1, 4, 100), (1, 2, 300),
-                      (6, 3, -100), (6, 1, 200), (3, 4, 400), (3, 1, 400),
-                      (5, 6, 700), (5, 1, 1000), (4, 2, 100)]
-    print(optimalRoute(downhillScores, 6, 2))
+    #downhillScores = [(0, 6, -500), (1, 4, 100), (1, 2, 300),
+    #                  (6, 3, -100), (6, 1, 200), (3, 4, 400), (3, 1, 400),
+    #                  (5, 6, 700), (5, 1, 1000), (4, 2, 100)]
+    #print(optimalRoute(downhillScores, 6, 6))
+    pass
